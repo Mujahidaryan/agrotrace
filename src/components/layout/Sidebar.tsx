@@ -97,11 +97,11 @@ export default function Sidebar({ isOpen, onClose }: Props) {
                 color: '#4ade80',
               }}
             >
-              JD
+              MM
             </div>
             <div>
-              <div className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>Jane Doe</div>
-              <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>Logistics Director</div>
+              <div className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>Muhammad Mujahid</div>
+              <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>Full-Stack Developer</div>
             </div>
           </div>
           <div className="mt-4 flex items-center gap-2 px-2">
