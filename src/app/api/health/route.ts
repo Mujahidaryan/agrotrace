@@ -6,7 +6,6 @@
 // external uptime monitors (Better Uptime, UptimeRobot) rely on them.
 
 import { NextResponse } from 'next/server';
-import { checkDatabaseHealth } from '@/db/queries';
 
 const START_TIME = Date.now();
 const VERSION = process.env.npm_package_version ?? '0.2.0';

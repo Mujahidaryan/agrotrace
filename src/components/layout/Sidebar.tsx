@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 
 const NAV = [
   { href: '/dashboard', label: 'Dashboard',  icon: <IconGrid /> },

@@ -63,7 +63,7 @@ export default function AnalyticsPage() {
               <div key={r.province} className="glass rounded-2xl p-4 sm:p-5">
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
                   <div>
-                    <div className="kicker"><span>{'// '}</span>{r.province}</div>
+                    <div className="kicker">{'// '}{r.province}</div>
                     <div className="font-heading italic text-white text-[22px] sm:text-[26px] leading-none" style={{ letterSpacing: -1 }}>
                       {r.province} Province
                     </div>

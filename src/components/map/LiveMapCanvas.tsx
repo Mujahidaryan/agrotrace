@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { MapRoute, SupplyNode } from '@/types';
-import { statusLabel, transportIcon, freshnessColor } from '@/lib/utils';
+import { statusLabel, transportIcon } from '@/lib/utils';
 
 // Geographic bounds for the map viewport
 // Pakistan-centric, extended to show international routes

@@ -4,7 +4,7 @@
 // No business logic here — only data retrieval and transformation.
 // Business logic (filtering, aggregation) stays in API route handlers.
 
-import sql from './client';
+import { getSql } from './client';
 import type {
   Shipment, SupplyNode, Alert, DashboardSummary,
   VolumeDataPoint, DelayAnalytics, RegionInsight, ExportTrend, MapRoute,
@@ -31,7 +31,7 @@ export interface ShipmentFilters {
 export async function getShipments(filters: ShipmentFilters = {}): Promise<Shipment[]> {
   const { province, status, mode, is_export, product, limit = 50 } = filters;
 
-  const rows = await sql<Shipment[]>`
+  const rows = await getSql()<Shipment[]>`
     SELECT
       s.id,
       s.tracking_code,
@@ -112,7 +112,7 @@ export async function getShipments(filters: ShipmentFilters = {}): Promise<Shipm
 }
 
 export async function getShipmentCount(): Promise<number> {
-  const [row] = await sql<[{ count: string }]>`SELECT count(*) FROM shipments`;
+  const [row] = await getSql()<[{ count: string }]>`SELECT count(*) FROM shipments`;
   return parseInt(row.count, 10);
 }
 
@@ -121,7 +121,7 @@ export async function getShipmentCount(): Promise<number> {
 // ─────────────────────────────────────────────────────────────
 
 export async function getSupplyNodes(): Promise<SupplyNode[]> {
-  const rows = await sql<SupplyNode[]>`
+  const rows = await getSql()<SupplyNode[]>`
     SELECT
       n.id, n.name, n.type,
       n.capacity_tonnes, n.current_load_tonnes, n.utilization_pct,
@@ -145,7 +145,7 @@ export async function getSupplyNodes(): Promise<SupplyNode[]> {
 // ─────────────────────────────────────────────────────────────
 
 export async function getAlerts(): Promise<{ active: Alert[]; resolved: Alert[] }> {
-  const rows = await sql<Alert[]>`
+  const rows = await getSql()<Alert[]>`
     SELECT * FROM alerts
     ORDER BY
       CASE severity
@@ -169,7 +169,7 @@ export async function getAlerts(): Promise<{ active: Alert[]; resolved: Alert[] 
 // ─────────────────────────────────────────────────────────────
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
-  const [row] = await sql<[DashboardSummary]>`
+  const [row] = await getSql()<[DashboardSummary]>`
     SELECT
       (SELECT count(*) FROM shipments)::int                                           AS total_shipments,
       (SELECT count(*) FROM shipments WHERE status = 'in_transit')::int               AS active_shipments,
@@ -196,7 +196,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
 }
 
 export async function getVolumeData(): Promise<VolumeDataPoint[]> {
-  const rows = await sql<VolumeDataPoint[]>`
+  const rows = await getSql()<VolumeDataPoint[]>`
     SELECT
       to_char(day, 'Mon DD') AS date,
       region,
@@ -210,7 +210,7 @@ export async function getVolumeData(): Promise<VolumeDataPoint[]> {
 }
 
 export async function getDelayAnalytics(): Promise<DelayAnalytics[]> {
-  const rows = await sql<DelayAnalytics[]>`
+  const rows = await getSql()<DelayAnalytics[]>`
     SELECT
       region,
       total_shipments,
@@ -225,7 +225,7 @@ export async function getDelayAnalytics(): Promise<DelayAnalytics[]> {
 }
 
 export async function getRegionInsights(): Promise<RegionInsight[]> {
-  const rows = await sql<RegionInsight[]>`
+  const rows = await getSql()<RegionInsight[]>`
     SELECT
       province,
       total_volume_tonnes,
@@ -240,7 +240,7 @@ export async function getRegionInsights(): Promise<RegionInsight[]> {
 }
 
 export async function getExportTrends(): Promise<ExportTrend[]> {
-  const rows = await sql<ExportTrend[]>`
+  const rows = await getSql()<ExportTrend[]>`
     SELECT
       destination_country,
       to_char(month, 'Mon YYYY')      AS month,
@@ -259,7 +259,7 @@ export async function getExportTrends(): Promise<ExportTrend[]> {
 // ─────────────────────────────────────────────────────────────
 
 export async function getMapRoutes(): Promise<MapRoute[]> {
-  const rows = await sql<MapRoute[]>`
+  const rows = await getSql()<MapRoute[]>`
     SELECT
       id,
       jsonb_build_object('lat', from_lat, 'lng', from_lng, 'label', from_label) AS "from",
@@ -284,7 +284,7 @@ export async function getMapRoutes(): Promise<MapRoute[]> {
 /** Returns true if the database connection is healthy. */
 export async function checkDatabaseHealth(): Promise<boolean> {
   try {
-    await sql`SELECT 1`;
+    await getSql()`SELECT 1`;
     return true;
   } catch {
     return false;

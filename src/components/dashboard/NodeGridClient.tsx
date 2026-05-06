@@ -13,6 +13,7 @@ export default function NodeGridClient() {
     return (
       <div>
         <div className="kicker">{'// Supply Nodes'}</div>
+        <div className="node-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {[...Array(8)].map((_, i) => <div key={i} className="data-card animate-pulse h-32" />)}
         </div>
       </div>
