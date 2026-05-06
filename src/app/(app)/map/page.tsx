@@ -1,15 +1,21 @@
 export const dynamic = 'force-dynamic';
-import noSSR from 'next/dynamic';
+import dynamic from 'next/dynamic';
 
-const MapClient = noSSR(() => import('./MapClient'), {
+const MapClient = dynamic(() => import('./MapClient'), {
   ssr: false,
   loading: () => (
     <div className="flex-1 flex items-center justify-center">
-      <div className="glass rounded-2xl px-6 py-4 text-white/50 text-sm">Loading map...</div>
+      <div className="glass rounded-2xl p-8 text-center">
+        <div className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Loading map…</div>
+      </div>
     </div>
   ),
 });
 
 export default function MapPage() {
-  return <MapClient />;
+  return (
+    <div className="flex flex-col flex-1 overflow-hidden">
+      <MapClient />
+    </div>
+  );
 }
