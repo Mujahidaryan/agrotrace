@@ -1,107 +1,141 @@
-/**
- * src/lib/utils.ts — AgroTrace shared utilities
- * Every helper function referenced by any component lives here.
- */
+import { type ClassValue, clsx } from 'clsx';
+import type { ShipmentStatus, Priority, NodeType, TransportMode, ProductCategory } from '@/types';
 
-export function formatNumber(n: number | undefined | null, decimals = 0): string {
-  if (n == null || isNaN(n)) return '—';
-  return n.toLocaleString('en-US', { maximumFractionDigits: decimals });
+export function cn(...inputs: ClassValue[]) {
+  return clsx(inputs);
 }
 
-export function formatUSD(n: number | undefined | null): string {
-  if (n == null || isNaN(n)) return '—';
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000)     return `$${(n / 1_000).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
+export function formatNumber(n: number, decimals = 0): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(decimals || 1)}K`;
+  return n.toFixed(decimals);
 }
 
-export function formatTonnes(n: number | undefined | null): string {
-  if (n == null || isNaN(n)) return '—';
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M t`;
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(0)}K t`;
-  return `${n.toFixed(0)} t`;
+export function formatUSD(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
+  return `$${n}`;
 }
 
-export function formatPct(n: number | undefined | null, decimals = 1): string {
-  if (n == null || isNaN(n)) return '—';
-  return `${n.toFixed(decimals)}%`;
+export function formatTonnes(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K t`;
+  return `${n} t`;
 }
 
-export function timeAgo(iso: string | undefined | null): string {
-  if (!iso) return '—';
+export function formatHours(h: number): string {
+  if (h < 1) return `${Math.round(h * 60)}min`;
+  if (h < 24) return `${h.toFixed(0)}h`;
+  return `${(h / 24).toFixed(1)}d`;
+}
+
+export function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
-  const mins  = Math.floor(diff / 60_000);
-  const hours = Math.floor(diff / 3_600_000);
-  const days  = Math.floor(diff / 86_400_000);
-  if (mins  < 1)  return 'just now';
-  if (mins  < 60) return `${mins}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
+  const h = diff / 3600000;
+  if (h < 1) return `${Math.round(h * 60)}m ago`;
+  if (h < 24) return `${Math.round(h)}h ago`;
+  return `${Math.round(h / 24)}d ago`;
 }
 
-export function statusBg(status: string): string {
-  switch (status) {
-    case 'in_transit':   return 'badge-blue';
-    case 'delivered':    return 'badge-green';
-    case 'delayed':      return 'badge-danger';
-    case 'customs_hold': return 'badge-amber';
-    case 'pending':      return 'badge-ghost';
-    case 'cancelled':    return 'badge-ghost';
-    default:             return 'badge-ghost';
-  }
+export function statusColor(status: ShipmentStatus): string {
+  const map: Record<ShipmentStatus, string> = {
+    pending: 'text-white/50',
+    in_transit: 'text-blue',
+    delayed: 'text-danger',
+    delivered: 'text-green',
+    cancelled: 'text-white/30',
+    customs_hold: 'text-amber',
+  };
+  return map[status] ?? 'text-white/50';
 }
 
-export function statusLabel(status: string): string {
-  switch (status) {
-    case 'in_transit':   return 'In Transit';
-    case 'delivered':    return 'Delivered';
-    case 'delayed':      return 'Delayed';
-    case 'customs_hold': return 'Customs Hold';
-    case 'pending':      return 'Pending';
-    case 'cancelled':    return 'Cancelled';
-    default:             return status;
-  }
+export function statusBg(status: ShipmentStatus): string {
+  const map: Record<ShipmentStatus, string> = {
+    pending:      'bg-white/5 border-white/10 text-white/50',
+    in_transit:   'bg-blue-400/10 border-blue-400/20 text-blue-400',
+    delayed:      'bg-red-400/10 border-red-400/20 text-red-400',
+    delivered:    'bg-green-400/10 border-green-400/20 text-green-400',
+    cancelled:    'bg-white/5 border-white/5 text-white/30',
+    customs_hold: 'bg-amber-400/10 border-amber-400/20 text-amber-400',
+  };
+  return map[status] ?? 'bg-white/5 border-white/10 text-white/50';
 }
 
-export function priorityBg(priority: string): string {
-  switch (priority) {
-    case 'critical': return 'badge-danger';
-    case 'high':     return 'badge-amber';
-    case 'medium':   return 'badge-blue';
-    case 'low':      return 'badge-ghost';
-    default:         return 'badge-ghost';
-  }
+export function statusLabel(status: ShipmentStatus): string {
+  const map: Record<ShipmentStatus, string> = {
+    pending: 'Pending',
+    in_transit: 'In Transit',
+    delayed: 'Delayed',
+    delivered: 'Delivered',
+    cancelled: 'Cancelled',
+    customs_hold: 'Customs Hold',
+  };
+  return map[status] ?? status;
 }
 
-export function transportIcon(mode: string): string {
-  switch (mode) {
-    case 'truck': return '🚛';
-    case 'ship':  return '🚢';
-    case 'air':   return '✈️';
-    case 'rail':  return '🚂';
-    default:      return '🚛';
-  }
+export function priorityColor(p: Priority): string {
+  const map: Record<Priority, string> = {
+    critical: 'text-danger',
+    high: 'text-amber',
+    medium: 'text-blue',
+    low: 'text-white/40',
+  };
+  return map[p];
 }
 
-export function nodeTypeIcon(type: string): string {
-  switch (type) {
-    case 'farm':                return '🌾';
-    case 'warehouse':           return '🏭';
-    case 'distribution_center': return '🏬';
-    case 'port':                return '⚓';
-    case 'airport':             return '✈️';
-    case 'retailer':            return '🛒';
-    case 'export_hub':          return '🌍';
-    default:                    return '📦';
-  }
+export function priorityBg(p: Priority): string {
+  const map: Record<Priority, string> = {
+    critical: 'bg-red-400/10 border-red-400/20 text-red-400',
+    high:     'bg-amber-400/10 border-amber-400/20 text-amber-400',
+    medium:   'bg-blue-400/10 border-blue-400/20 text-blue-400',
+    low:      'bg-white/5 border-white/10 text-white/40',
+  };
+  return map[p] ?? 'bg-white/5 border-white/10 text-white/40';
+}
+
+export function nodeTypeIcon(type: NodeType): string {
+  const map: Record<NodeType, string> = {
+    farm: '🌾',
+    warehouse: '🏭',
+    distribution_center: '📦',
+    port: '⚓',
+    airport: '✈️',
+    retailer: '🏪',
+    export_hub: '🚢',
+  };
+  return map[type] ?? '📍';
+}
+
+export function transportIcon(mode: TransportMode): string {
+  const map: Record<TransportMode, string> = {
+    truck: '🚛',
+    ship: '🚢',
+    air: '✈️',
+    rail: '🚂',
+  };
+  return map[mode];
 }
 
 export function freshnessColor(score: number): string {
-  if (score >= 85) return 'text-[#4ade80]';
-  if (score >= 65) return 'text-[#fbbf24]';
-  return 'text-[#f87171]';
+  if (score >= 85) return 'text-green-400';
+  if (score >= 65) return 'text-amber-400';
+  return 'text-red-400';
 }
 
-export function clsx(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(' ');
+export function freshnessLabel(score: number): string {
+  if (score >= 85) return 'Excellent';
+  if (score >= 70) return 'Good';
+  if (score >= 55) return 'Fair';
+  return 'Critical';
+}
+
+export function categoryLabel(cat: ProductCategory): string {
+  const map: Record<ProductCategory, string> = {
+    grains: 'Grains & Cereals',
+    fruits: 'Fruits',
+    vegetables: 'Vegetables',
+    livestock: 'Livestock',
+    dairy: 'Dairy',
+    processed: 'Processed',
+  };
+  return map[cat];
 }

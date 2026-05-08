@@ -1,153 +1,177 @@
 'use client';
-
-import { useCallback } from 'react';
 import Topbar from '@/components/layout/Topbar';
 import AnalyticsCharts from '@/components/charts/AnalyticsCharts';
 import { usePolling } from '@/hooks/usePolling';
-import type { DashboardSummary, VolumeDataPoint, ExportTrend, DelayAnalytics, RegionInsight } from '@/types';
+import { formatUSD, formatTonnes, formatNumber } from '@/lib/utils';
+import type { RegionInsight, ExportTrend, DelayAnalytics, VolumeDataPoint } from '@/types';
 
 interface AnalyticsResponse {
   success: boolean;
-  summary: DashboardSummary;
-  volume: VolumeDataPoint[];
-  delays: DelayAnalytics[];
   regions: RegionInsight[];
   exports: ExportTrend[];
-  error?: { message: string };
-}
-
-function StatPill({ label, value, color }: { label: string; value: string | number; color?: string }) {
-  return (
-    <div className="glass rounded-xl p-4 flex flex-col gap-1">
-      <span className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.35)' }}>{label}</span>
-      <span className="text-2xl font-heading italic" style={{ color: color ?? '#4ade80' }}>
-        {typeof value === 'number' ? value.toLocaleString() : value}
-      </span>
-    </div>
-  );
+  delays: DelayAnalytics[];
+  volume: VolumeDataPoint[];
 }
 
 export default function AnalyticsClient() {
-  const { data, loading, error, refetch } = usePolling<AnalyticsResponse>('/api/analytics', 60_000);
+  const { data, loading, error, refetch } = usePolling<AnalyticsResponse>('/api/analytics', 30_000);
 
-  const handleRetry = useCallback(() => refetch(), [refetch]);
+  if (loading && !data) {
+    return (
+      <>
+        <Topbar title="Analytics & Intelligence" subtitle="Loading..." />
+        <div className="flex-1 p-4 sm:p-6 space-y-4">
+          <div className="region-grid grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="glass rounded-2xl h-64 animate-pulse" />
+            <div className="glass rounded-2xl h-64 animate-pulse" />
+          </div>
+          <div className="glass rounded-2xl h-80 animate-pulse" />
+        </div>
+      </>
+    );
+  }
 
-  const subtitle = loading ? 'Loading…' : error ? 'Error' : 'Live intelligence · 60s refresh';
-  const dotColor = error ? '#f87171' : loading ? '#fbbf24' : '#4ade80';
+  if (error && !data) {
+    return (
+      <>
+        <Topbar title="Analytics & Intelligence" subtitle="Error" />
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="glass rounded-2xl p-8 text-center max-w-sm w-full">
+            <div className="text-white/40 text-sm mb-3 break-words">Failed to load: {error}</div>
+            <button onClick={refetch} className="btn btn-primary btn-sm">Retry</button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const regions = data?.regions ?? [];
+  const delays  = data?.delays  ?? [];
+  const exports = data?.exports ?? [];
+  const volume  = data?.volume  ?? [];
 
   return (
     <>
-      <Topbar
-        title="Analytics & Intelligence"
-        subtitle={subtitle}
-      />
+      <Topbar title="Analytics & Intelligence" subtitle="Regional · Export · Delay analysis" />
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* Error state */}
-        {error && !loading && (
-          <div className="glass rounded-2xl p-10 flex flex-col items-center justify-center gap-4">
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>
-              Failed to load: {error}
-            </p>
-            <button
-              onClick={handleRetry}
-              className="px-5 py-2 rounded-xl text-sm font-semibold"
-              style={{ background: '#4ade80', color: '#041a0a' }}
-            >
-              Retry
-            </button>
-          </div>
-        )}
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
 
-        {/* Loading skeleton */}
-        {loading && !data && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="glass rounded-xl h-20 animate-pulse" />
+        {regions.length > 0 && (
+          <div className="region-grid grid grid-cols-1 md:grid-cols-2 gap-4">
+            {regions.map(r => (
+              <div key={r.province} className="glass rounded-2xl p-4 sm:p-5">
+                <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
+                  <div>
+                    <div className="kicker">{'// '}{r.province}</div>
+                    <div className="font-heading italic text-white text-[22px] sm:text-[26px] leading-none" style={{ letterSpacing: -1 }}>
+                      {r.province} Province
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[24px] sm:text-[28px] font-heading italic" style={{ color: '#4ade80' }}>
+                      +{r.yoy_growth_pct}%
+                    </div>
+                    <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>YoY Growth</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {[
+                    { label: 'Volume',    val: formatTonnes(r.total_volume_tonnes) },
+                    { label: 'Shipments', val: formatNumber(r.active_shipments) },
+                    { label: 'Exports',   val: formatUSD(r.export_value_usd) },
+                  ].map(m => (
+                    <div key={m.label} className="rounded-xl px-2 py-2 text-center"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div className="text-[14px] sm:text-[16px] font-heading italic text-white">{m.val}</div>
+                      <div className="text-[9px] sm:text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{m.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-1.5">
+                  {(r.top_products as { product: string; volume: number }[]).map((p, i) => {
+                    const maxVol = (r.top_products as { product: string; volume: number }[])[0].volume;
+                    const pct = Math.round((p.volume / maxVol) * 100);
+                    const colors = ['#4ade80','#60a5fa','#fbbf24','#f472b6','#a78bfa'];
+                    return (
+                      <div key={p.product} className="flex items-center gap-2">
+                        <div className="text-[11px] truncate" style={{ color: 'rgba(255,255,255,0.6)', minWidth: 80, maxWidth: 120 }}>{p.product}</div>
+                        <div className="flex-1 freshness-bar">
+                          <div className="freshness-fill" style={{ width: `${pct}%`, background: colors[i] ?? '#4ade80' }} />
+                        </div>
+                        <div className="text-[10px] w-12 text-right flex-shrink-0" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                          {(p.volume / 1000).toFixed(0)}K t
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             ))}
           </div>
         )}
 
-        {/* Summary pills */}
-        {data?.success && data.summary && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            <StatPill label="Total Shipments"    value={data.summary.total_shipments}                                  color="#4ade80" />
-            <StatPill label="Active"             value={data.summary.active_shipments}                                 color="#60a5fa" />
-            <StatPill label="Delayed"            value={data.summary.delayed_shipments}                                color="#f87171" />
-            <StatPill label="On-Time Rate"       value={`${data.summary.on_time_rate_pct ?? 0}%`}                     color="#4ade80" />
-            <StatPill label="Export Value"       value={`$${(data.summary.export_value_usd / 1_000_000).toFixed(1)}M`} color="#fbbf24" />
-          </div>
-        )}
+        <AnalyticsCharts volumeData={volume} exportTrends={exports} />
 
-        {/* Charts */}
-        {data?.success && (
-          <AnalyticsCharts
-            volumeData={data.volume ?? []}
-            exportTrends={data.exports ?? []}
-          />
-        )}
-
-        {/* Region table */}
-        {data?.success && data.regions && data.regions.length > 0 && (
-          <div className="glass rounded-2xl p-5">
-            <h3 className="text-sm font-semibold mb-4" style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Regional Breakdown
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    <th className="text-left pb-3">Province</th>
-                    <th className="text-right pb-3">Volume (t)</th>
-                    <th className="text-right pb-3">Active Shipments</th>
-                    <th className="text-right pb-3">Export Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.regions.map(r => (
-                    <tr key={r.province} style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td className="py-2.5" style={{ color: 'rgba(255,255,255,0.75)' }}>{r.province}</td>
-                      <td className="py-2.5 text-right" style={{ color: '#4ade80' }}>
-                        {r.total_volume_tonnes.toLocaleString()}
-                      </td>
-                      <td className="py-2.5 text-right" style={{ color: '#60a5fa' }}>
-                        {r.active_shipments}
-                      </td>
-                      <td className="py-2.5 text-right" style={{ color: '#fbbf24' }}>
-                        ${(r.export_value_usd / 1000).toFixed(0)}K
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {delays.length > 0 && (
+          <div className="glass rounded-2xl p-4 sm:p-5">
+            <div className="kicker mb-3">{'// Delay Root Cause Analysis'}</div>
+            <div className="delay-grid grid grid-cols-2 md:grid-cols-4 gap-3">
+              {delays.map(d => (
+                <div key={d.region} className="rounded-xl p-3 sm:p-4"
+                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div className="text-[11px] font-semibold text-white mb-1 truncate">{d.region}</div>
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="text-[20px] font-heading italic" style={{ color: '#f87171' }}>{d.delay_rate_pct}%</span>
+                    <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.35)' }}>delayed</span>
+                  </div>
+                  <div className="space-y-1">
+                    {(d.top_reasons as { reason: string; count: number }[])?.slice(0, 3).map(r => (
+                      <div key={r.reason} className="flex items-center justify-between">
+                        <span className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.5)' }}>{r.reason}</span>
+                        <span className="text-[10px] font-semibold ml-1 flex-shrink-0" style={{ color: '#f87171' }}>{r.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Delay analytics */}
-        {data?.success && data.delays && data.delays.length > 0 && (
-          <div className="glass rounded-2xl p-5">
-            <h3 className="text-sm font-semibold mb-4" style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Delay Analysis by Region
-            </h3>
-            <div className="space-y-3">
-              {data.delays.map(d => (
-                <div key={d.region} className="flex items-center gap-4">
-                  <span className="w-24 text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{d.region}</span>
-                  <div className="flex-1 h-2 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${Math.min(d.delay_rate_pct, 100)}%`,
-                        background: d.delay_rate_pct > 30 ? '#f87171' : d.delay_rate_pct > 15 ? '#fbbf24' : '#4ade80',
-                      }}
-                    />
-                  </div>
-                  <span className="text-xs w-12 text-right" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                    {d.delay_rate_pct}%
-                  </span>
-                </div>
-              ))}
+        {exports.length > 0 && (
+          <div className="glass rounded-2xl overflow-hidden">
+            <div className="px-4 sm:px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="kicker">{'// Export Trends'}</div>
+              <div className="text-[13px] font-semibold text-white">International Trade Flows</div>
+            </div>
+            <div className="table-scroll overflow-x-auto">
+              <table className="data-table" style={{ minWidth: 520 }}>
+                <thead>
+                  <tr>
+                    <th>Destination</th>
+                    <th>Volume</th>
+                    <th>Value (USD)</th>
+                    <th className="table-hide-xs">Top Product</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {exports.map((t, i) => {
+                    const breakdown = t.product_breakdown as { product: string; pct: number }[];
+                    return (
+                      <tr key={`${t.destination_country}-${i}`}>
+                        <td className="text-white font-medium">{t.destination_country}</td>
+                        <td className="text-white/70">{Number(t.volume_tonnes).toLocaleString()} t</td>
+                        <td className="text-white/70">{formatUSD(t.value_usd)}</td>
+                        <td className="text-white/70 table-hide-xs">
+                          {breakdown[0]?.product} ({breakdown[0]?.pct}%)
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
