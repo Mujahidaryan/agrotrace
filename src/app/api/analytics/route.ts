@@ -1,23 +1,24 @@
 // src/app/api/analytics/route.ts
 import { NextResponse } from 'next/server';
-import {
-  getDashboardSummary, getVolumeData, getDelayAnalytics,
-  getRegionInsights, getExportTrends,
-} from '@/db/queries';
+import { isDatabaseAvailable } from '@/db/client';
+import { getDashboardSummary, getVolumeData, getDelayAnalytics, getRegionInsights, getExportTrends } from '@/db/queries';
+import { DASHBOARD_SUMMARY, VOLUME_DATA, DELAY_ANALYTICS, REGION_INSIGHTS, EXPORT_TRENDS } from '@/lib/data';
 
 export async function GET() {
-  try {
-    // Parallelise all five queries — they have no dependencies on each other.
-    const [summary, volume, delays, regions, exports] = await Promise.all([
-      getDashboardSummary(),
-      getVolumeData(),
-      getDelayAnalytics(),
-      getRegionInsights(),
-      getExportTrends(),
-    ]);
-
+  // ── MOCK FALLBACK ─────────────────────────────────────────
+  if (!isDatabaseAvailable()) {
     return NextResponse.json(
-      { success: true, summary, volume, delays, regions, exports },
+      { success: true, summary: DASHBOARD_SUMMARY, volume: VOLUME_DATA, delays: DELAY_ANALYTICS, regions: REGION_INSIGHTS, exports: EXPORT_TRENDS, source: 'mock' },
+      { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' } }
+    );
+  }
+  // ── LIVE DATABASE ─────────────────────────────────────────
+  try {
+    const [summary, volume, delays, regions, exports] = await Promise.all([
+      getDashboardSummary(), getVolumeData(), getDelayAnalytics(), getRegionInsights(), getExportTrends(),
+    ]);
+    return NextResponse.json(
+      { success: true, summary, volume, delays, regions, exports, source: 'db' },
       { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' } }
     );
   } catch (err) {

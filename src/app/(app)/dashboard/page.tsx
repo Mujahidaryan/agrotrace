@@ -1,30 +1,5 @@
-export const dynamic = 'force-dynamic';
-import noSSR from 'next/dynamic';
 import Topbar from '@/components/layout/Topbar';
-
-const DashboardClient = noSSR(
-  () => import('@/components/dashboard/DashboardClient'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="page-pad p-4 sm:p-6 space-y-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="data-card animate-pulse">
-              <div className="w-9 h-9 rounded-[10px] bg-white/5 mb-3" />
-              <div className="h-7 bg-white/5 rounded w-2/3 mb-2" />
-              <div className="h-3 bg-white/5 rounded w-1/2" />
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2 glass rounded-2xl h-56 animate-pulse" />
-          <div className="glass rounded-2xl h-56 animate-pulse" />
-        </div>
-      </div>
-    ),
-  }
-);
+import DashboardClient from '@/components/dashboard/DashboardClient';
 
 export default function DashboardPage() {
   return (

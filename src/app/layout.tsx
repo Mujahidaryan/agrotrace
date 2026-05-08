@@ -1,5 +1,27 @@
 import type { Metadata } from 'next';
+import { Instrument_Serif, Barlow, Barlow_Condensed } from 'next/font/google';
 import './globals.css';
+
+// BUG 4 FIX: Restore Google Fonts with CSS variable injection
+const instrumentSerif = Instrument_Serif({
+  subsets: ['latin'],
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  variable: '--font-instrument',
+  display: 'swap',
+});
+const barlow = Barlow({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-barlow',
+  display: 'swap',
+});
+const barlowCondensed = Barlow_Condensed({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-barlow-condensed',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'AgroTrace — Food Supply Intelligence Platform',
@@ -14,7 +36,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`${instrumentSerif.variable} ${barlow.variable} ${barlowCondensed.variable}`}
+    >
       <body>{children}</body>
     </html>
   );

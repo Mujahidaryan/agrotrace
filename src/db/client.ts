@@ -1,7 +1,7 @@
 // src/db/client.ts
-// Singleton Postgres client. Uses the `postgres` npm package.
-// getSql() is lazy — it only creates the client on first call,
-// so Next.js can import this module at build time without DATABASE_URL set.
+// Singleton Postgres client with graceful mock-data fallback.
+// If DATABASE_URL is not set, the app runs on realistic mock data
+// from src/lib/data.ts — no database required for demo/preview deploys.
 
 import postgres from 'postgres';
 
@@ -11,9 +11,8 @@ export function getSql(): postgres.Sql {
   if (g.__pg) return g.__pg;
   const url = process.env.DATABASE_URL;
   if (!url) {
-    throw new Error(
-      'DATABASE_URL is not set. Add it to .env.local (dev) or Vercel / Railway environment variables.'
-    );
+    // Signal to callers that DB is unavailable — they should use mock fallback
+    throw new Error('NO_DATABASE_URL');
   }
   g.__pg = postgres(url, {
     max: 10,
@@ -25,5 +24,8 @@ export function getSql(): postgres.Sql {
   return g.__pg;
 }
 
-// Keep default export as a convenience alias
+export function isDatabaseAvailable(): boolean {
+  return !!process.env.DATABASE_URL;
+}
+
 export default getSql;
