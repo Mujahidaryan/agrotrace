@@ -1,8 +1,4 @@
 // src/db/client.ts
-// Singleton Postgres client with graceful mock-data fallback.
-// If DATABASE_URL is not set, the app runs on realistic mock data
-// from src/lib/data.ts — no database required for demo/preview deploys.
-
 import postgres from 'postgres';
 
 const g = globalThis as typeof globalThis & { __pg?: postgres.Sql };
@@ -10,15 +6,20 @@ const g = globalThis as typeof globalThis & { __pg?: postgres.Sql };
 export function getSql(): postgres.Sql {
   if (g.__pg) return g.__pg;
   const url = process.env.DATABASE_URL;
-  if (!url) {
-    // Signal to callers that DB is unavailable — they should use mock fallback
-    throw new Error('NO_DATABASE_URL');
-  }
-  g.__pg = postgres(url, {
+  if (!url) throw new Error('NO_DATABASE_URL');
+
+  // Strip unsupported params that break the postgres npm package
+  // (channel_binding=require is a Neon-specific param not supported by this driver)
+  const cleanUrl = url
+    .replace(/[?&]channel_binding=[^&]*/g, '')
+    .replace(/\?&/, '?')
+    .replace(/\?$/, '');
+
+  g.__pg = postgres(cleanUrl, {
     max: 10,
     idle_timeout: 30,
     connect_timeout: 10,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: { rejectUnauthorized: false },
     onnotice: () => {},
   });
   return g.__pg;

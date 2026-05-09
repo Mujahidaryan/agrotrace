@@ -5,27 +5,14 @@ import { getDashboardSummary, getVolumeData, getDelayAnalytics, getRegionInsight
 import { DASHBOARD_SUMMARY, VOLUME_DATA, DELAY_ANALYTICS, REGION_INSIGHTS, EXPORT_TRENDS } from '@/lib/data';
 
 export async function GET() {
-  // ── MOCK FALLBACK ─────────────────────────────────────────
   if (!isDatabaseAvailable()) {
-    return NextResponse.json(
-      { success: true, summary: DASHBOARD_SUMMARY, volume: VOLUME_DATA, delays: DELAY_ANALYTICS, regions: REGION_INSIGHTS, exports: EXPORT_TRENDS, source: 'mock' },
-      { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' } }
-    );
+    return NextResponse.json({ success: true, summary: DASHBOARD_SUMMARY, volume: VOLUME_DATA, delays: DELAY_ANALYTICS, regions: REGION_INSIGHTS, exports: EXPORT_TRENDS });
   }
-  // ── LIVE DATABASE ─────────────────────────────────────────
   try {
-    const [summary, volume, delays, regions, exports] = await Promise.all([
-      getDashboardSummary(), getVolumeData(), getDelayAnalytics(), getRegionInsights(), getExportTrends(),
-    ]);
-    return NextResponse.json(
-      { success: true, summary, volume, delays, regions, exports, source: 'db' },
-      { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' } }
-    );
+    const [summary, volume, delays, regions, exports] = await Promise.all([getDashboardSummary(), getVolumeData(), getDelayAnalytics(), getRegionInsights(), getExportTrends()]);
+    return NextResponse.json({ success: true, summary, volume, delays, regions, exports }, { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' } });
   } catch (err) {
     console.error('[GET /api/analytics]', err instanceof Error ? err.message : String(err));
-    return NextResponse.json(
-      { success: false, error: { code: 'QUERY_FAILED', message: 'Failed to retrieve analytics' } },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: { code: 'QUERY_FAILED', message: 'Failed to retrieve analytics' } }, { status: 500 });
   }
 }

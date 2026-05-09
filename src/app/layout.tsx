@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Instrument_Serif, Barlow, Barlow_Condensed } from 'next/font/google';
 import './globals.css';
 
-// BUG 4 FIX: Restore Google Fonts with CSS variable injection
 const instrumentSerif = Instrument_Serif({
   subsets: ['latin'],
   weight: ['400'],
