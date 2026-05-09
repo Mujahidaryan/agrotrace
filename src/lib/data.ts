@@ -264,7 +264,7 @@ export const SHIPMENTS: Shipment[] = [
     id: 'shp_017', tracking_code: 'AGT-IPR-2863',
     product: prodMap['prod_milk'], quantity_tonnes: 120,
     origin: nodeMap['node_pun_farm_4'], destination: nodeMap['node_khi_retail'],
-    transport_mode: 'truck', carrier: 'Gerry's dnata Logistics',
+    transport_mode: 'truck', carrier: "Gerry's dnata Logistics",
     status: 'in_transit', priority: 'critical', freshness_score: 95,
     temperature_c: 4, departure_at: hoursAgo(8), eta_at: hoursAhead(12),
     value_usd: 144000, is_export: false, created_at: daysAgo(1), updated_at: hoursAgo(1),
